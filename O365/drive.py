@@ -514,6 +514,11 @@ class DriveItem(ApiComponent):
         # Thumbnails
         self.thumbnails = cloud_data.get(self._cc('thumbnails'), [])
 
+        list_item = cloud_data.get(self._cc('listItem'), None)
+        if list_item:
+            from .sharepoint import SharepointListItem
+            self.list_item = SharepointListItem(parent=self, **{self._cloud_data_key: list_item})
+
     def __str__(self):
         return self.__repr__()
 
@@ -1395,6 +1400,11 @@ class Drive(ApiComponent):
         self.modified = parse(modified).astimezone(
             local_tz) if modified else None
 
+        sharepoint_list = cloud_data.get(self._cc('list'), None)
+        if sharepoint_list:
+            from .sharepoint import SharepointList
+            self.list = SharepointList(parent=self, **{self._cloud_data_key: sharepoint_list})
+
     def __str__(self):
         return self.__repr__()
 
@@ -1570,7 +1580,7 @@ class Drive(ApiComponent):
         return self._base_get_list(url, limit=limit, query=query,
                                    order_by=order_by, batch=batch)
 
-    def get_item(self, item_id):
+    def get_item(self, item_id, query=None):
         """ Returns a DriveItem by it's Id
 
         :return: one item
@@ -1586,7 +1596,11 @@ class Drive(ApiComponent):
             url = self.build_url(
                 self._endpoints.get('get_item_default').format(item_id=item_id))
 
-        response = self.con.get(url)
+        params = {}
+        if query:
+            params.update(query.as_params())
+
+        response = self.con.get(url, params=params)
         if not response:
             return None
 
@@ -1596,7 +1610,7 @@ class Drive(ApiComponent):
         return self._classifier(data)(parent=self,
                                       **{self._cloud_data_key: data})
 
-    def get_item_by_path(self, item_path):
+    def get_item_by_path(self, item_path, query=None):
         """ Returns a DriveItem by it's path: /path/to/file
         :return: one item
         :rtype: DriveItem
@@ -1611,7 +1625,11 @@ class Drive(ApiComponent):
             url = self.build_url(
                 self._endpoints.get('get_item_by_path_default').format(item_path=item_path))
 
-        response = self.con.get(url)
+        params = {}
+        if query:
+            params.update(query.as_params())
+
+        response = self.con.get(url, params=params)
         if not response:
             return None
 
@@ -1826,7 +1844,7 @@ class Storage(ApiComponent):
                                       main_resource=self.main_resource,
                                       **{self._cloud_data_key: drive})
 
-    def get_drive(self, drive_id):
+    def get_drive(self, drive_id, query=None):
         """ Returns a Drive instance
 
         :param drive_id: the drive_id to be retrieved
@@ -1839,7 +1857,11 @@ class Storage(ApiComponent):
         url = self.build_url(
             self._endpoints.get('get_drive').format(id=drive_id))
 
-        response = self.con.get(url)
+        params = {}
+        if query:
+            params.update(query.as_params())
+
+        response = self.con.get(url, params=params)
         if not response:
             return None
 
